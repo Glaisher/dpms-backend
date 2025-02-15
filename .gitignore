@@ -1,0 +1,7 @@
+*.env
+
+# Ignore the cache files
+*.cache
+
+# Ignore the compiled Python files
+**/__pycache__/
