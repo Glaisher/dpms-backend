@@ -3,16 +3,23 @@ from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404
+from django.core.exceptions import ValidationError
 from .permissions import IsEmployee, IsAdmin, IsSecurity
 from .models import Permit, ActivityLog
 from .serializers import PermitSerializer, ActivityLogSerializer, PermitUpdateSerializer
 from accounts.models import User
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import JSONParser
 
 
 class PermitViewSet(viewsets.ModelViewSet):
     queryset = Permit.objects.all()
 
     def get_permissions(self):
+        if not self.request.user.is_authenticated:
+            return [permissions.IsAuthenticated()]
+
         if self.action == 'create':
             return [permissions.IsAuthenticated(), IsEmployee()]
         elif self.action == 'list':
@@ -63,25 +70,6 @@ class PermitViewSet(viewsets.ModelViewSet):
         )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    @action(detail=True, methods=['post'], permission_classes=[IsSecurity])
-    def verify(self, request, pk=None):
-        # Security Officer verifies permit by QR code
-        permit = get_object_or_404(Permit, pk=pk)
-        if permit.is_expired():
-            status = 'Invalid'
-        else:
-            status = 'Valid'
-
-        # Log the verification action
-        ActivityLog.objects.create(
-            permit=permit,
-            action='verified',
-            performed_by=request.user,
-            comment=f'Permit verified as {status}'
-        )
-
-        return Response({"message": f"Permit is {status}"})
-
     @action(detail=True, methods=['put'], permission_classes=[IsAdmin])
     def approve(self, request, pk=None):
         # Admin approves or rejects a permit
@@ -125,6 +113,30 @@ class PermitViewSet(viewsets.ModelViewSet):
 
         return Response(PermitSerializer(permit).data)
 
+
+class VerifyPermitView(APIView):
+    permission_classes = [IsAuthenticated, IsSecurity]
+    parser_classes = [JSONParser]
+
+    def post(self, request, *args, **kwargs):
+        qr_code = request.data.get('qr_code')
+        if not qr_code:
+            return Response({"detail": "QR code is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            permit = get_object_or_404(Permit, qr_code=qr_code)
+        except ValidationError:
+            return Response({"detail": "Invalid QR code"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Log the verification action
+        ActivityLog.objects.create(
+            permit=permit,
+            action='verified',
+            performed_by=request.user,
+            comment=f'Permit verified as {permit.permit_status}'
+        )
+
+        return Response(PermitSerializer(permit).data)
 
 # class ActivityLogViewSet(viewsets.ReadOnlyModelViewSet):
 #     queryset = ActivityLog.objects.all()
