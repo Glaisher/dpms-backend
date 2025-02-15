@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'djoser',
+    'accounts',
 ]
 
 MIDDLEWARE = [
@@ -90,6 +91,12 @@ DATABASES = {
 }
 
 
+AUTH_USER_MODEL = 'accounts.User'
+
+AUTHENTICATION_BACKENDS = [
+    'accounts.backends.EmployeeIDBackend',
+]
+
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
@@ -138,8 +145,4 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     )
-}
-
-SIMPLE_JWT = {
-   'AUTH_HEADER_TYPES': ('JWT',),
 }
