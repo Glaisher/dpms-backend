@@ -20,8 +20,8 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser):
     ROLE_CHOICES = [
         ('admin', 'Admin'),
-        ('staff', 'Staff'),
-        ('security_officer', 'Security Officer'),
+        ('employee', 'Employee'),
+        ('security', 'Security Officer'),
     ]
 
     employee_id = models.CharField(max_length=50, unique=True)
@@ -39,3 +39,12 @@ class User(AbstractBaseUser):
 
     def __str__(self):
         return self.employee_id
+
+    def is_admin(self):
+        return self.role == 'admin'
+
+    def is_employee(self):
+        return self.role == 'employee'
+
+    def is_security(self):
+        return self.role == 'security'
