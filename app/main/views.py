@@ -1,10 +1,10 @@
 # views.py
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404
+from .permissions import IsEmployee, IsAdmin, IsSecurity
 from .models import Permit, ActivityLog
-from .permissions import IsAdmin, IsEmployee, IsSecurity
 from .serializers import PermitSerializer, ActivityLogSerializer, PermitUpdateSerializer
 from accounts.models import User
 
