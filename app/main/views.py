@@ -11,6 +11,8 @@ from accounts.models import User
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import JSONParser
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
+from drf_spectacular.types import OpenApiTypes
 
 
 class PermitViewSet(viewsets.ModelViewSet):
@@ -113,11 +115,17 @@ class PermitViewSet(viewsets.ModelViewSet):
 
         return Response(PermitSerializer(permit).data)
 
+import uuid
 
 class VerifyPermitView(APIView):
     permission_classes = [IsAuthenticated, IsSecurity]
     parser_classes = [JSONParser]
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name='qr_code', description='QR code uuid', required=True, type=str, location='body')
+        ],
+    )
     def post(self, request, *args, **kwargs):
         qr_code = request.data.get('qr_code')
         if not qr_code:
